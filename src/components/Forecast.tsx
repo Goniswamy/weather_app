@@ -25,6 +25,7 @@ import {
   fetchWeatherNarrative,
   generateFallbackNarrative,
 } from '@/services/openRouterService';
+import type { DashboardTab } from '@/pages/Index';
 
 export interface HourlyForecast {
   time: string;
@@ -92,6 +93,7 @@ export interface ForecastProps {
   hourly?: HourlyForecast[];
   daily?: DailyForecast[];
   metrics?: AdditionalMetrics;
+  activeTab?: DashboardTab;
 }
 
 const defaultHourly: HourlyForecast[] = [
@@ -249,6 +251,7 @@ export const Forecast: React.FC<ForecastProps> = ({
   hourly = defaultHourly,
   daily = defaultDaily,
   metrics = defaultMetrics,
+  activeTab = 'forecast',
 }) => {
   const sliderRef = useRef<HTMLDivElement>(null);
   const [selectedHourIndex, setSelectedHourIndex] = useState<number | null>(null);
@@ -328,230 +331,184 @@ export const Forecast: React.FC<ForecastProps> = ({
   }, [loadNarrative]);
 
   return (
-    <section className="w-full max-w-7xl mx-auto space-y-6">
-      {/* AI Smart Weather Narrative Card */}
-      <div className="p-5 sm:p-6 bg-gradient-to-r from-blue-50/90 via-indigo-50/80 to-purple-50/90 backdrop-blur-md rounded-2xl shadow-lg border border-white/40 space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-xl shadow-md">
-              <Sparkles className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-base sm:text-lg font-bold text-gray-900">
-                  AI Smart Weather Narrative
-                </h3>
-                <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200">
-                  OpenRouter AI
-                </span>
+    <section className="w-full max-w-7xl mx-auto space-y-5">
+      {/* ───────────────────────────────────────────────────
+          TAB 1: "Forecast & Hourly"
+          Shows: AI Daily Overview · Hourly Slider · 5-Day Forecast
+      ─────────────────────────────────────────────────── */}
+      {activeTab === 'forecast' && (
+        <>
+          {/* AI Daily Overview */}
+          <div className="p-5 bg-gradient-to-r from-blue-50/90 via-indigo-50/80 to-purple-50/90 backdrop-blur-md rounded-2xl shadow-md border border-white/40 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-xl shadow-sm">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-gray-900">AI Daily Overview</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Conversational atmospheric summary for today
+                  </p>
+                </div>
               </div>
-              <p className="text-xs text-gray-500">
-                Real-time conversational meteorological executive summary
-              </p>
-            </div>
-          </div>
 
-          <button
-            type="button"
-            onClick={loadNarrative}
-            disabled={isLoadingNarrative}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/90 hover:bg-white text-indigo-700 hover:text-indigo-900 border border-indigo-200/80 shadow-2xs hover:shadow-xs transition-all active:scale-95 disabled:opacity-60 cursor-pointer"
-            title="Regenerate AI Narrative"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoadingNarrative ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Refresh AI</span>
-          </button>
-        </div>
-
-        {/* Narrative Content / Skeleton Loading */}
-        {isLoadingNarrative ? (
-          <div className="py-2 space-y-2.5 animate-pulse">
-            <div className="flex items-center gap-2 text-xs font-medium text-indigo-600">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Synthesizing atmospheric conditions via OpenRouter...</span>
-            </div>
-            <div className="h-4 bg-indigo-200/60 rounded-full w-full" />
-            <div className="h-4 bg-indigo-200/40 rounded-full w-4/5" />
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <p className="text-sm sm:text-base text-gray-800 leading-relaxed font-medium">
-              "{narrative}"
-            </p>
-
-            <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-indigo-100/60 text-xs font-medium text-gray-600">
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/80 border border-indigo-100 text-gray-700">
-                <span>🌡️</span> High: <strong>{daily[0]?.tempMax || 31}°C</strong>
-              </span>
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/80 border border-indigo-100 text-gray-700">
-                <span>💧</span> Rain Risk: <strong>{daily[0]?.rainChance || 45}%</strong>
-              </span>
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/80 border border-indigo-100 text-gray-700">
-                <span>☀️</span> UV Index: <strong>{metrics.uvIndex} ({uvConfig.level})</strong>
-              </span>
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/80 border border-indigo-100 text-gray-700">
-                <span>💨</span> Wind: <strong>{windData.speed} {windData.direction}</strong>
-              </span>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* 24-Hour Interactive Horizontal Scrollable Slider */}
-      <div className="p-5 sm:p-6 bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-white/20">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
-              <Clock className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-bold text-gray-900">24-Hour Forecast</h3>
-                <span className="text-xs px-2 py-0.5 font-semibold bg-blue-100 text-blue-800 rounded-full">
-                  24h Live Slider
-                </span>
-              </div>
-              <p className="text-xs text-gray-500">
-                Smooth hourly precipitation, temperature & humidity progression
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 self-end sm:self-auto">
-            {selectedHour && (
-              <span className="text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 px-3 py-1 rounded-lg animate-fade-in hidden md:inline-block">
-                Selected: {selectedHour.time} • {selectedHour.temp}°C • {selectedHour.condition}
-              </span>
-            )}
-            <div className="flex items-center gap-1.5 bg-gray-100/80 p-1 rounded-xl">
               <button
                 type="button"
-                onClick={() => scrollSlider('left')}
-                className="p-1.5 rounded-lg bg-white shadow-xs hover:bg-blue-50 text-gray-700 hover:text-blue-600 transition-all active:scale-95"
-                aria-label="Scroll left"
-                title="Scroll left"
+                onClick={loadNarrative}
+                disabled={isLoadingNarrative}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/90 hover:bg-white text-indigo-700 hover:text-indigo-900 border border-indigo-200/80 shadow-sm hover:shadow transition-all active:scale-95 disabled:opacity-60 cursor-pointer"
+                title="Regenerate AI Narrative"
               >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => scrollSlider('right')}
-                className="p-1.5 rounded-lg bg-white shadow-xs hover:bg-blue-50 text-gray-700 hover:text-blue-600 transition-all active:scale-95"
-                aria-label="Scroll right"
-                title="Scroll right"
-              >
-                <ChevronRight className="w-4 h-4" />
+                <RefreshCw className={`w-3.5 h-3.5 ${isLoadingNarrative ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">Refresh</span>
               </button>
             </div>
-          </div>
-        </div>
 
-        {/* Scrollable Container with custom styled Tailwind scrollbar */}
-        <div
-          ref={sliderRef}
-          tabIndex={0}
-          aria-label="24-hour weather forecast slider"
-          className="overflow-x-auto flex gap-3 pb-3 pt-1 px-1 custom-scrollbar scroll-smooth outline-none focus-visible:ring-2 focus-visible:ring-blue-400/50 rounded-xl"
-        >
-          {hourly.map((item, index) => {
-            const isSelected = selectedHourIndex === index;
-            return (
-              <div
-                key={`${item.time}-${index}`}
-                onClick={() => setSelectedHourIndex(isSelected ? null : index)}
-                className={`flex-none w-[114px] sm:w-[124px] p-3 rounded-xl border transition-all duration-200 select-none cursor-pointer flex flex-col items-center justify-between text-center group ${
-                  isSelected
-                    ? 'bg-blue-50/95 border-blue-400 shadow-md -translate-y-1 scale-[1.02] ring-2 ring-blue-300'
-                    : 'bg-white/70 hover:bg-white border-white/60 hover:border-blue-200 shadow-xs hover:shadow-md hover:-translate-y-1'
-                }`}
-              >
-                {/* Time */}
-                <span className="text-xs font-semibold text-gray-700 tracking-tight">
-                  {item.time}
-                </span>
+            {isLoadingNarrative ? (
+              <div className="py-2 space-y-2.5 animate-pulse">
+                <div className="flex items-center gap-2 text-xs font-medium text-indigo-600">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Synthesizing today's forecast summary…</span>
+                </div>
+                <div className="h-4 bg-indigo-200/60 rounded-full w-full" />
+                <div className="h-4 bg-indigo-200/40 rounded-full w-4/5" />
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm sm:text-base text-gray-800 leading-relaxed font-medium">
+                  &ldquo;{narrative}&rdquo;
+                </p>
 
-                {/* Weather Icon */}
-                <span className="text-3xl my-2 transform group-hover:scale-110 transition-transform">
-                  {item.icon}
-                </span>
-
-                {/* Temperature in °C */}
-                <span className="text-base font-bold text-gray-900">
-                  {item.temp}°C
-                </span>
-
-                {/* Precipitation Percentage Badge */}
-                <div className="mt-1.5 w-full flex justify-center">
-                  <span
-                    className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[11px] font-semibold ${
-                      item.pop >= 40
-                        ? 'bg-blue-500 text-white shadow-xs'
-                        : item.pop > 0
-                        ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                        : 'bg-gray-100 text-gray-400'
-                    }`}
-                  >
-                    💧 {item.pop}%
+                <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-indigo-100/60 text-xs font-medium">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/80 border border-indigo-100 text-gray-700">
+                    <span>🌡️</span> High: <strong>{daily[0]?.tempMax ?? 31}°C</strong>
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/80 border border-indigo-100 text-gray-700">
+                    <span>💧</span> Rain Risk: <strong>{daily[0]?.rainChance ?? 45}%</strong>
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/80 border border-indigo-100 text-gray-700">
+                    <span>☀️</span> UV: <strong>{metrics.uvIndex} — {uvConfig.level}</strong>
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/80 border border-indigo-100 text-gray-700">
+                    <span>💨</span> Wind: <strong>{windData.speed} {windData.direction}</strong>
                   </span>
                 </div>
-
-                {/* Humidity */}
-                <div className="mt-1.5 flex items-center gap-1 text-[11px] text-gray-500 font-medium">
-                  <Droplets className="w-3 h-3 text-blue-400" />
-                  <span>{item.humidity}%</span>
-                </div>
-
-                {/* Condition hint */}
-                <span className="mt-1 text-[10px] text-gray-400 truncate max-w-full font-medium">
-                  {item.condition}
-                </span>
               </div>
-            );
-          })}
-        </div>
-      </div>
+            )}
+          </div>
 
-      {/* 2-Column Responsive Dashboard Grid: 5-Day Forecast & Rich Additional Weather Details */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* 5-Day Weather Forecast Card */}
-        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-white/20 p-5 sm:p-6 flex flex-col justify-between">
-          <div>
+          {/* Hourly Outlook */}
+          <div className="p-5 bg-white/90 backdrop-blur-md rounded-2xl shadow-md border border-white/20">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+                  <Clock className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-gray-900">Hourly Outlook</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Precipitation, temperature & humidity — hour by hour
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 self-end sm:self-auto">
+                {selectedHour && (
+                  <span className="text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 px-3 py-1 rounded-lg hidden md:inline-block">
+                    {selectedHour.time} · {selectedHour.temp}°C · {selectedHour.condition}
+                  </span>
+                )}
+                <div className="flex items-center gap-1 bg-gray-100/80 p-1 rounded-xl">
+                  <button
+                    type="button"
+                    onClick={() => scrollSlider('left')}
+                    className="p-1.5 rounded-lg bg-white shadow-sm hover:bg-blue-50 text-gray-600 hover:text-blue-600 transition-all active:scale-95"
+                    aria-label="Scroll left"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => scrollSlider('right')}
+                    className="p-1.5 rounded-lg bg-white shadow-sm hover:bg-blue-50 text-gray-600 hover:text-blue-600 transition-all active:scale-95"
+                    aria-label="Scroll right"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div
+              ref={sliderRef}
+              tabIndex={0}
+              aria-label="24-hour weather forecast slider"
+              className="overflow-x-auto flex gap-3 pb-3 pt-1 px-1 custom-scrollbar scroll-smooth outline-none focus-visible:ring-2 focus-visible:ring-blue-400/50 rounded-xl"
+            >
+              {hourly.map((item, index) => {
+                const isSelected = selectedHourIndex === index;
+                return (
+                  <div
+                    key={`${item.time}-${index}`}
+                    onClick={() => setSelectedHourIndex(isSelected ? null : index)}
+                    className={`flex-none w-[112px] sm:w-[122px] p-3 rounded-xl border transition-all duration-200 select-none cursor-pointer flex flex-col items-center justify-between text-center group ${
+                      isSelected
+                        ? 'bg-blue-50/95 border-blue-400 shadow-md -translate-y-1 scale-[1.02] ring-2 ring-blue-300'
+                        : 'bg-white/70 hover:bg-white border-white/60 hover:border-blue-200 shadow-sm hover:shadow-md hover:-translate-y-1'
+                    }`}
+                  >
+                    <span className="text-xs font-semibold text-gray-600">{item.time}</span>
+                    <span className="text-3xl my-2 transform group-hover:scale-110 transition-transform">{item.icon}</span>
+                    <span className="text-sm font-bold text-gray-900">{item.temp}°C</span>
+
+                    <div className="mt-1.5 w-full flex justify-center">
+                      <span className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                        item.pop >= 40 ? 'bg-blue-500 text-white' : item.pop > 0 ? 'bg-blue-100 text-blue-700 border border-blue-200' : 'bg-gray-100 text-gray-400'
+                      }`}>
+                        💧 {item.pop}%
+                      </span>
+                    </div>
+
+                    <div className="mt-1.5 flex items-center gap-1 text-[11px] text-gray-500">
+                      <Droplets className="w-3 h-3 text-blue-400" />
+                      <span>{item.humidity}%</span>
+                    </div>
+
+                    <span className="mt-1 text-[10px] text-gray-400 truncate max-w-full">{item.condition}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 5-Day Forecast */}
+          <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-md border border-white/20 p-5">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
-                  <Calendar className="w-5 h-5" />
+                  <Calendar className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-base sm:text-lg font-bold text-gray-900">
-                    5-Day Weather Forecast
-                  </h3>
-                  <p className="text-xs text-gray-500">Extended daily outlook & rain trends</p>
+                  <h3 className="text-base font-bold text-gray-900">5-Day Forecast</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">Extended daily outlook & rain probability</p>
                 </div>
               </div>
 
-              {/* View switch button */}
               <div className="flex items-center gap-1 bg-gray-100/90 p-1 rounded-xl">
                 <button
                   type="button"
                   onClick={() => setDailyViewMode('list')}
-                  className={`p-1.5 rounded-lg text-xs font-medium transition-all ${
-                    dailyViewMode === 'list'
-                      ? 'bg-white text-blue-600 shadow-xs'
-                      : 'text-gray-500 hover:text-gray-800'
-                  }`}
-                  title="List View"
+                  className={`p-1.5 rounded-lg transition-all ${dailyViewMode === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                  title="List view"
                 >
                   <List className="w-3.5 h-3.5" />
                 </button>
                 <button
                   type="button"
                   onClick={() => setDailyViewMode('grid')}
-                  className={`p-1.5 rounded-lg text-xs font-medium transition-all ${
-                    dailyViewMode === 'grid'
-                      ? 'bg-white text-blue-600 shadow-xs'
-                      : 'text-gray-500 hover:text-gray-800'
-                  }`}
-                  title="Grid View"
+                  className={`p-1.5 rounded-lg transition-all ${dailyViewMode === 'grid' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                  title="Grid view"
                 >
                   <LayoutGrid className="w-3.5 h-3.5" />
                 </button>
@@ -559,37 +516,27 @@ export const Forecast: React.FC<ForecastProps> = ({
             </div>
 
             {dailyViewMode === 'list' ? (
-              <div className="space-y-2.5">
+              <div className="space-y-2">
                 {daily.map((item) => (
                   <div
                     key={item.day}
-                    className="flex items-center justify-between p-3 rounded-xl bg-white/60 hover:bg-white border border-white/50 hover:border-blue-200 shadow-xs hover:shadow-sm transition-all group"
+                    className="flex items-center justify-between p-3 rounded-xl bg-white/60 hover:bg-white border border-white/50 hover:border-blue-200 shadow-sm hover:shadow transition-all group"
                   >
-                    <div className="w-24 sm:w-28 text-left">
-                      <span className="font-semibold text-sm text-gray-800 block">
-                        {item.day}
-                      </span>
-                      {item.date && (
-                        <span className="text-[11px] text-gray-400 font-medium">
-                          {item.date}
-                        </span>
-                      )}
+                    <div className="w-20 sm:w-24 text-left">
+                      <span className="font-semibold text-sm text-gray-800 block">{item.day}</span>
+                      {item.date && <span className="text-[11px] text-gray-400">{item.date}</span>}
                     </div>
 
                     <div className="flex items-center gap-2 flex-1 justify-center sm:justify-start">
-                      <span className="text-2xl transform group-hover:scale-110 transition-transform">
-                        {item.icon}
-                      </span>
-                      <span className="text-xs text-gray-600 font-medium hidden sm:inline">
-                        {item.condition}
-                      </span>
+                      <span className="text-2xl transform group-hover:scale-110 transition-transform">{item.icon}</span>
+                      <span className="text-xs text-gray-600 font-medium hidden sm:inline">{item.condition}</span>
                     </div>
 
-                    <div className="text-xs font-semibold text-blue-600 px-2.5 py-1 rounded-full bg-blue-50 border border-blue-100 text-center mr-3">
+                    <div className="text-xs font-semibold text-blue-600 px-2.5 py-1 rounded-full bg-blue-50 border border-blue-100 mr-3">
                       💧 {item.rainChance}%
                     </div>
 
-                    <div className="text-sm font-bold text-gray-900 w-24 sm:w-28 text-right">
+                    <div className="text-sm font-bold text-gray-900 w-20 sm:w-24 text-right">
                       <span>{item.tempMax}°</span>{' '}
                       <span className="text-gray-400 font-normal">/ {item.tempMin}°C</span>
                     </div>
@@ -597,22 +544,16 @@ export const Forecast: React.FC<ForecastProps> = ({
                 ))}
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+              <div className="grid grid-cols-5 gap-3">
                 {daily.map((item) => (
                   <div
                     key={item.day}
-                    className="p-3.5 rounded-xl bg-white/60 hover:bg-white border border-white/50 hover:border-blue-200 shadow-xs hover:shadow-sm transition-all flex flex-col items-center text-center group"
+                    className="p-3.5 rounded-xl bg-white/60 hover:bg-white border border-white/50 hover:border-blue-200 shadow-sm hover:shadow transition-all flex flex-col items-center text-center group"
                   >
                     <span className="font-semibold text-xs text-gray-800">{item.day}</span>
-                    {item.date && (
-                      <span className="text-[10px] text-gray-400 mb-1">{item.date}</span>
-                    )}
-                    <span className="text-3xl my-2 transform group-hover:scale-110 transition-transform">
-                      {item.icon}
-                    </span>
-                    <span className="text-[11px] text-gray-500 font-medium truncate max-w-full mb-2">
-                      {item.condition}
-                    </span>
+                    {item.date && <span className="text-[10px] text-gray-400 mb-1">{item.date}</span>}
+                    <span className="text-3xl my-2 transform group-hover:scale-110 transition-transform">{item.icon}</span>
+                    <span className="text-[11px] text-gray-500 truncate max-w-full mb-2">{item.condition}</span>
                     <div className="mt-auto w-full pt-2 border-t border-gray-100 flex flex-col gap-1 items-center">
                       <span className="text-[10px] font-semibold text-blue-600 px-1.5 py-0.5 rounded-full bg-blue-50">
                         💧 {item.rainChance}%
@@ -626,229 +567,201 @@ export const Forecast: React.FC<ForecastProps> = ({
               </div>
             )}
           </div>
-        </div>
+        </>
+      )}
 
-        {/* Feature 2: High-Impact Visual Additional Weather Details Grid Card */}
-        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-white/20 p-5 sm:p-6 space-y-4 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center gap-2.5 mb-4">
-              <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
-                <Gauge className="w-5 h-5" />
+      {/* ───────────────────────────────────────────────────
+          TAB 2: "Metrics & Air Quality"
+          Shows: AQI · UV · Wind Compass · Sunrise/Sunset · Quick Metrics
+      ─────────────────────────────────────────────────── */}
+      {activeTab === 'metrics' && (
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-md border border-white/20 p-5 space-y-5">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+              <Gauge className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-gray-900">Weather Metrics & Air Quality</h3>
+              <p className="text-xs text-gray-500 mt-0.5">Live environmental readings, AQI, UV advice & solar data</p>
+            </div>
+          </div>
+
+          {/* 4 Rich Visual Widgets in responsive grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            {/* Widget 1: AQI */}
+            <div className="p-4 rounded-xl bg-white/70 hover:bg-white border border-white/60 shadow-sm hover:shadow transition-all flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-700">
+                  <Activity className="w-4 h-4 text-emerald-600" />
+                  <span>Air Quality Index</span>
+                </div>
+                <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${aqiConfig.color}`}>
+                  {aqiConfig.status}
+                </span>
               </div>
-              <div>
-                <h3 className="text-base sm:text-lg font-bold text-gray-900">
-                  Additional Weather Details
-                </h3>
-                <p className="text-xs text-gray-500">Live environmental widgets, AQI, UV advice & wind</p>
+
+              <div className="flex items-baseline gap-2 mt-1">
+                <span className="text-3xl font-extrabold text-gray-900">{aqiData.aqi}</span>
+                <span className="text-xs font-medium text-gray-400">AQI</span>
+              </div>
+
+              <div className="space-y-1">
+                <div className="w-full h-2 rounded-full bg-gradient-to-r from-emerald-400 via-amber-400 via-orange-400 to-rose-500 relative overflow-hidden">
+                  <div className="absolute top-0 bottom-0 right-0 bg-gray-200/60" style={{ width: `${Math.max(0, 100 - aqiConfig.percentage)}%` }} />
+                </div>
+                <div className="flex justify-between text-[10px] text-gray-400">
+                  <span>0 — Good</span>
+                  <span>150+ — Unhealthy</span>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-gray-100 flex justify-between text-[11px] text-gray-600">
+                <span>PM2.5: <strong className="text-gray-900">{aqiData.pm25}</strong> µg/m³</span>
+                <span>PM10: <strong className="text-gray-900">{aqiData.pm10}</strong> µg/m³</span>
               </div>
             </div>
 
-            {/* 4 Rich Visual Widgets Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              {/* Widget 1: Air Quality Index (AQI) Gauge */}
-              <div className="p-3.5 rounded-xl bg-white/70 hover:bg-white border border-white/60 shadow-xs hover:shadow-sm transition-all flex flex-col justify-between">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-700">
-                    <Activity className="w-4 h-4 text-emerald-600" />
-                    <span>Air Quality Index</span>
-                  </div>
-                  <span
-                    className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${aqiConfig.color}`}
-                  >
-                    {aqiConfig.status}
-                  </span>
+            {/* Widget 2: UV Protection */}
+            <div className="p-4 rounded-xl bg-white/70 hover:bg-white border border-white/60 shadow-sm hover:shadow transition-all flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-700">
+                  <Sun className={`w-4 h-4 ${uvConfig.iconColor}`} />
+                  <span>UV Protection</span>
                 </div>
-
-                <div className="my-1.5 flex items-baseline gap-2">
-                  <span className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
-                    {aqiData.aqi}
-                  </span>
-                  <span className="text-xs font-medium text-gray-400">AQI Score</span>
-                </div>
-
-                {/* AQI Graphical Meter Bar */}
-                <div className="w-full space-y-1 my-1">
-                  <div className="w-full h-2 rounded-full bg-gradient-to-r from-emerald-400 via-amber-400 via-orange-400 to-rose-500 relative overflow-hidden">
-                    <div
-                      className="absolute top-0 bottom-0 right-0 bg-gray-200/60"
-                      style={{ width: `${Math.max(0, 100 - aqiConfig.percentage)}%` }}
-                    />
-                  </div>
-                  <div className="flex justify-between text-[10px] text-gray-400 font-medium">
-                    <span>0 (Good)</span>
-                    <span>150+ (Unhealthy)</span>
-                  </div>
-                </div>
-
-                {/* PM2.5 / PM10 Breakdown */}
-                <div className="mt-2 pt-2 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-600">
-                  <span className="font-medium">
-                    PM2.5: <strong className="text-gray-900">{aqiData.pm25}</strong> µg/m³
-                  </span>
-                  <span className="font-medium">
-                    PM10: <strong className="text-gray-900">{aqiData.pm10}</strong> µg/m³
-                  </span>
-                </div>
+                <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${uvConfig.badgeColor}`}>
+                  UV {metrics.uvIndex} · {uvConfig.level}
+                </span>
               </div>
 
-              {/* Widget 2: UV Protection Advice Badge */}
-              <div className="p-3.5 rounded-xl bg-white/70 hover:bg-white border border-white/60 shadow-xs hover:shadow-sm transition-all flex flex-col justify-between">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-700">
-                    <Sun className={`w-4 h-4 ${uvConfig.iconColor}`} />
-                    <span>UV Protection</span>
-                  </div>
-                  <span
-                    className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${uvConfig.badgeColor}`}
-                  >
-                    UV {metrics.uvIndex} • {uvConfig.level}
-                  </span>
-                </div>
-
-                {/* Advice Card Callout */}
-                <div className="my-1.5 p-2 rounded-lg bg-amber-50/70 border border-amber-200/60 flex items-start gap-2">
-                  <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                  <p className="text-[11px] text-amber-900 font-medium leading-relaxed">
-                    {uvConfig.advice}
-                  </p>
-                </div>
-
-                {/* UV Meter indicator */}
-                <div className="mt-2 pt-2 border-t border-gray-100 flex items-center justify-between text-[10px] text-gray-500 font-medium">
-                  <span>Peak: 10 AM – 4 PM</span>
-                  <span className="text-amber-700 font-semibold">Sunscreen Recommended</span>
-                </div>
+              <div className="flex items-baseline gap-2 mt-1">
+                <span className="text-3xl font-extrabold text-gray-900">{metrics.uvIndex}</span>
+                <span className="text-xs font-medium text-gray-400">UV Index</span>
               </div>
 
-              {/* Widget 3: Wind Compass & Speed Visualizer */}
-              <div className="p-3.5 rounded-xl bg-white/70 hover:bg-white border border-white/60 shadow-xs hover:shadow-sm transition-all flex flex-col justify-between">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-700">
-                    <Wind className="w-4 h-4 text-teal-600" />
-                    <span>Wind & Compass</span>
-                  </div>
-                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200">
-                    {windData.direction} ({windData.degrees}°)
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-3 my-1">
-                  {/* Graphical Compass Rose */}
-                  <div className="relative w-14 h-14 rounded-full border-2 border-teal-100 bg-teal-50/50 flex items-center justify-center shrink-0 shadow-inner">
-                    <span className="absolute top-0.5 text-[9px] font-bold text-gray-400">N</span>
-                    <span className="absolute bottom-0.5 text-[9px] font-bold text-gray-400">S</span>
-                    <span className="absolute left-1 text-[9px] font-bold text-gray-400">W</span>
-                    <span className="absolute right-1 text-[9px] font-bold text-gray-400">E</span>
-                    <Navigation
-                      className="w-6 h-6 text-teal-600 transition-transform duration-500 drop-shadow-xs"
-                      style={{ transform: `rotate(${windData.degrees}deg)` }}
-                    />
-                  </div>
-
-                  <div className="flex flex-col justify-center">
-                    <span className="text-xl font-bold text-gray-900 tracking-tight">
-                      {windData.speed}
-                    </span>
-                    <span className="text-xs font-semibold text-teal-700">
-                      Gusts up to {windData.gusts}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mt-2 pt-2 border-t border-gray-100 flex items-center justify-between text-[10px] text-gray-500 font-medium">
-                  <span>Direction: {windData.direction}</span>
-                  <span>Breeze: Moderate</span>
-                </div>
+              <div className="p-2.5 rounded-lg bg-amber-50/80 border border-amber-200/60 flex items-start gap-2">
+                <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <p className="text-[11px] text-amber-900 font-medium leading-relaxed">{uvConfig.advice}</p>
               </div>
 
-              {/* Widget 4: Sunrise & Sunset Twilight Timeline */}
-              <div className="p-3.5 rounded-xl bg-white/70 hover:bg-white border border-white/60 shadow-xs hover:shadow-sm transition-all flex flex-col justify-between">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-700">
-                    <Sunrise className="w-4 h-4 text-amber-500" />
-                    <span>Sun & Twilight Cycle</span>
-                  </div>
-                  {sunData.daylightDuration && (
-                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
-                      ☀️ {sunData.daylightDuration}
-                    </span>
-                  )}
-                </div>
-
-                {/* Twilight Visual Timeline Bar */}
-                <div className="my-1.5 space-y-1">
-                  <div className="w-full h-2 rounded-full bg-gradient-to-r from-amber-400 via-sky-300 to-indigo-500 shadow-inner" />
-                  <div className="flex justify-between items-center text-[10px] text-gray-400">
-                    <span>Dawn {sunData.dawn}</span>
-                    <span>Dusk {sunData.dusk}</span>
-                  </div>
-                </div>
-
-                {/* Sunrise / Sunset Times */}
-                <div className="mt-2 pt-2 border-t border-gray-100 grid grid-cols-2 gap-2 text-center">
-                  <div className="flex items-center justify-center gap-1.5 bg-amber-50/60 py-1 px-2 rounded-lg">
-                    <Sunrise className="w-3.5 h-3.5 text-amber-600" />
-                    <div className="text-left">
-                      <span className="text-[9px] text-gray-400 uppercase block font-medium">Sunrise</span>
-                      <strong className="text-xs text-gray-900">{sunData.sunrise}</strong>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-center gap-1.5 bg-indigo-50/60 py-1 px-2 rounded-lg">
-                    <Sunset className="w-3.5 h-3.5 text-indigo-600" />
-                    <div className="text-left">
-                      <span className="text-[9px] text-gray-400 uppercase block font-medium">Sunset</span>
-                      <strong className="text-xs text-gray-900">{sunData.sunset}</strong>
-                    </div>
-                  </div>
-                </div>
+              <div className="pt-2 border-t border-gray-100 flex justify-between text-[10px] text-gray-500">
+                <span>Peak risk: 10 AM – 4 PM</span>
+                <span className="text-amber-700 font-semibold">SPF recommended</span>
               </div>
             </div>
 
-            {/* Quick Metrics 4-Column Row (Feels Like, Humidity, Visibility, Pressure) */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-3.5">
-              <div className="p-2.5 bg-white/70 hover:bg-white rounded-xl border border-white/60 shadow-xs transition-all">
-                <div className="flex items-center justify-between text-gray-500 mb-0.5">
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-                    Feels Like
-                  </span>
-                  <Thermometer className="w-3 h-3 text-orange-400" />
+            {/* Widget 3: Wind Compass */}
+            <div className="p-4 rounded-xl bg-white/70 hover:bg-white border border-white/60 shadow-sm hover:shadow transition-all flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-700">
+                  <Wind className="w-4 h-4 text-teal-600" />
+                  <span>Wind & Compass</span>
                 </div>
-                <p className="text-base font-bold text-gray-900">{metrics.feelsLike}°C</p>
+                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200">
+                  {windData.direction} · {windData.degrees}°
+                </span>
               </div>
 
-              <div className="p-2.5 bg-white/70 hover:bg-white rounded-xl border border-white/60 shadow-xs transition-all">
-                <div className="flex items-center justify-between text-gray-500 mb-0.5">
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-                    Humidity
-                  </span>
-                  <Droplets className="w-3 h-3 text-blue-400" />
+              <div className="flex items-center gap-4 mt-1">
+                <div className="relative w-16 h-16 rounded-full border-2 border-teal-100 bg-teal-50/50 flex items-center justify-center shrink-0 shadow-inner">
+                  <span className="absolute top-0.5 text-[9px] font-bold text-gray-400">N</span>
+                  <span className="absolute bottom-0.5 text-[9px] font-bold text-gray-400">S</span>
+                  <span className="absolute left-1 text-[9px] font-bold text-gray-400">W</span>
+                  <span className="absolute right-1 text-[9px] font-bold text-gray-400">E</span>
+                  <Navigation
+                    className="w-6 h-6 text-teal-600 transition-transform duration-500"
+                    style={{ transform: `rotate(${windData.degrees}deg)` }}
+                  />
                 </div>
-                <p className="text-base font-bold text-gray-900">{metrics.humidity}%</p>
+                <div>
+                  <span className="text-2xl font-bold text-gray-900 block">{windData.speed}</span>
+                  <span className="text-xs font-semibold text-teal-700">Gusts: {windData.gusts}</span>
+                </div>
               </div>
 
-              <div className="p-2.5 bg-white/70 hover:bg-white rounded-xl border border-white/60 shadow-xs transition-all">
-                <div className="flex items-center justify-between text-gray-500 mb-0.5">
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-                    Visibility
-                  </span>
-                  <Eye className="w-3 h-3 text-indigo-400" />
+              <div className="pt-2 border-t border-gray-100 flex justify-between text-[10px] text-gray-500">
+                <span>Direction: {windData.direction}</span>
+                <span>Moderate breeze</span>
+              </div>
+            </div>
+
+            {/* Widget 4: Sunrise / Sunset */}
+            <div className="p-4 rounded-xl bg-white/70 hover:bg-white border border-white/60 shadow-sm hover:shadow transition-all flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-700">
+                  <Sunrise className="w-4 h-4 text-amber-500" />
+                  <span>Sun & Twilight Cycle</span>
                 </div>
-                <p className="text-base font-bold text-gray-900">{metrics.visibility}</p>
+                {sunData.daylightDuration && (
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                    ☀️ {sunData.daylightDuration}
+                  </span>
+                )}
               </div>
 
-              <div className="p-2.5 bg-white/70 hover:bg-white rounded-xl border border-white/60 shadow-xs transition-all">
-                <div className="flex items-center justify-between text-gray-500 mb-0.5">
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-                    Pressure
-                  </span>
-                  <Gauge className="w-3 h-3 text-sky-500" />
+              <div className="space-y-1 mt-1">
+                <div className="w-full h-2 rounded-full bg-gradient-to-r from-amber-400 via-sky-300 to-indigo-500 shadow-inner" />
+                <div className="flex justify-between text-[10px] text-gray-400">
+                  <span>Dawn {sunData.dawn}</span>
+                  <span>Dusk {sunData.dusk}</span>
                 </div>
-                <p className="text-sm font-bold text-gray-900 mt-0.5">{metrics.pressure}</p>
+              </div>
+
+              <div className="pt-2 border-t border-gray-100 grid grid-cols-2 gap-2">
+                <div className="flex items-center gap-1.5 bg-amber-50/60 py-1.5 px-2 rounded-lg">
+                  <Sunrise className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  <div>
+                    <span className="text-[9px] text-gray-400 uppercase block">Sunrise</span>
+                    <strong className="text-xs text-gray-900">{sunData.sunrise}</strong>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 bg-indigo-50/60 py-1.5 px-2 rounded-lg">
+                  <Sunset className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                  <div>
+                    <span className="text-[9px] text-gray-400 uppercase block">Sunset</span>
+                    <strong className="text-xs text-gray-900">{sunData.sunset}</strong>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
+
+          {/* Quick Metrics strip — Feels Like, Humidity, Visibility, Pressure */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="p-3 bg-white/70 hover:bg-white rounded-xl border border-white/60 shadow-sm transition-all">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Feels Like</span>
+                <Thermometer className="w-3.5 h-3.5 text-orange-400" />
+              </div>
+              <p className="text-lg font-bold text-gray-900">{metrics.feelsLike}°C</p>
+              <p className="text-[10px] text-gray-500">Similar to actual</p>
+            </div>
+            <div className="p-3 bg-white/70 hover:bg-white rounded-xl border border-white/60 shadow-sm transition-all">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Humidity</span>
+                <Droplets className="w-3.5 h-3.5 text-blue-400" />
+              </div>
+              <p className="text-lg font-bold text-gray-900">{metrics.humidity}%</p>
+              <p className="text-[10px] text-gray-500">Moderate moisture</p>
+            </div>
+            <div className="p-3 bg-white/70 hover:bg-white rounded-xl border border-white/60 shadow-sm transition-all">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Visibility</span>
+                <Eye className="w-3.5 h-3.5 text-indigo-400" />
+              </div>
+              <p className="text-lg font-bold text-gray-900">{metrics.visibility}</p>
+              <p className="text-[10px] text-gray-500">Clear sight lines</p>
+            </div>
+            <div className="p-3 bg-white/70 hover:bg-white rounded-xl border border-white/60 shadow-sm transition-all">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Pressure</span>
+                <Gauge className="w-3.5 h-3.5 text-sky-500" />
+              </div>
+              <p className="text-sm font-bold text-gray-900 mt-0.5">{metrics.pressure}</p>
+              <p className="text-[10px] text-gray-500">Normal barometric</p>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </section>
   );
 };

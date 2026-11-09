@@ -479,14 +479,11 @@ export const WeatherPlanner: React.FC<WeatherPlannerProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-lg sm:text-xl font-bold text-gray-900">
-                Weather-Aware Daily Planner
+                Smart Day Planner
               </h2>
-              <span className="text-xs bg-indigo-100 text-indigo-800 px-2.5 py-0.5 rounded-full font-semibold">
-                Feature 3 • Smart Assistant
-              </span>
             </div>
             <p className="text-xs text-gray-500">
-              Interactive activity time-slot optimization & smart wardrobe recommendations
+              Activity optimizer & outfit recommendations
             </p>
           </div>
         </div>
@@ -613,9 +610,6 @@ export const WeatherPlanner: React.FC<WeatherPlannerProps> = ({
                     <h3 className="text-xs sm:text-sm font-bold text-gray-900">
                       AI Activity Evaluator
                     </h3>
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200">
-                      OpenRouter AI
-                    </span>
                   </div>
                   <p className="text-[11px] text-gray-500">
                     Deep multi-factor analysis for &quot;{selectedActivity.name}&quot;
