@@ -51,13 +51,40 @@ const OPENROUTER_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
 const DEFAULT_MODEL = 'google/gemini-2.0-flash-lite-001';
 
 /**
+ * Helper to validate OpenRouter API key.
+ * Ensures placeholder or invalid single-char keys (e.g. 's') are safely ignored
+ * without emitting console errors.
+ */
+function isValidApiKey(key: string | undefined): boolean {
+  if (!key) return false;
+  const trimmed = key.trim();
+  if (
+    trimmed.length < 15 ||
+    trimmed === 's' ||
+    trimmed.includes('placeholder') ||
+    trimmed.includes('your_') ||
+    trimmed === 'undefined' ||
+    trimmed === 'null'
+  ) {
+    return false;
+  }
+  return true;
+}
+
+/**
  * Generate a dynamic fallback 2-sentence weather narrative when API is offline or key is missing.
  */
 export function generateFallbackNarrative(metrics: WeatherNarrativeMetrics): string {
   const { tempMax, tempMin, condition, rainChance, uvIndex } = metrics;
 
+  const conditionLower = condition.toLowerCase();
+  // Avoid duplicate words like "scattered scattered showers"
+  const normalizedCondition = conditionLower.includes('scattered')
+    ? conditionLower
+    : `scattered ${conditionLower}`;
+
   if (rainChance >= 40) {
-    return `Expect afternoon highs near ${tempMax}°C with scattered ${condition.toLowerCase()} and a ${rainChance}% rain probability peaking after midday, so keeping an umbrella handy is highly recommended. Conditions will ease into a pleasant evening settling around ${tempMin}°C under calming breezes.`;
+    return `Expect afternoon highs near ${tempMax}°C with ${normalizedCondition} and a ${rainChance}% rain probability peaking after midday, so keeping an umbrella handy is highly recommended. Conditions will ease into a pleasant evening settling around ${tempMin}°C under calming breezes.`;
   }
 
   if (uvIndex >= 6) {
@@ -75,7 +102,7 @@ export async function fetchWeatherNarrative(
 ): Promise<string> {
   const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
 
-  if (!apiKey || apiKey.trim() === '') {
+  if (!isValidApiKey(apiKey)) {
     return generateFallbackNarrative(metrics);
   }
 
@@ -100,7 +127,7 @@ Guidelines:
     const response = await fetch(OPENROUTER_ENDPOINT, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${apiKey.trim()}`,
+        Authorization: `Bearer ${apiKey!.trim()}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173',
         'X-Title': 'SkyCheck Weather App',
@@ -126,7 +153,6 @@ Guidelines:
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      console.warn(`OpenRouter narrative request returned status ${response.status}. Using fallback narrative.`);
       return generateFallbackNarrative(metrics);
     }
 
@@ -138,8 +164,7 @@ Guidelines:
     }
 
     return generateFallbackNarrative(metrics);
-  } catch (error) {
-    console.warn('OpenRouter API call failed, using fallback narrative:', error);
+  } catch {
     return generateFallbackNarrative(metrics);
   }
 }
@@ -229,7 +254,7 @@ export async function evaluateActivityWithAI(
 ): Promise<ActivityEvaluationResult> {
   const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
 
-  if (!apiKey || apiKey.trim() === '') {
+  if (!isValidApiKey(apiKey)) {
     return generateFallbackActivityEvaluation(activity, forecastHours);
   }
 
@@ -259,7 +284,7 @@ Do not include any markdown wrappers or text outside the JSON object.`;
     const response = await fetch(OPENROUTER_ENDPOINT, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${apiKey.trim()}`,
+        Authorization: `Bearer ${apiKey!.trim()}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173',
         'X-Title': 'SkyCheck Weather App',
@@ -285,7 +310,6 @@ Do not include any markdown wrappers or text outside the JSON object.`;
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      console.warn(`OpenRouter evaluation returned status ${response.status}. Using fallback evaluator.`);
       return generateFallbackActivityEvaluation(activity, forecastHours);
     }
 
@@ -310,8 +334,7 @@ Do not include any markdown wrappers or text outside the JSON object.`;
     }
 
     return generateFallbackActivityEvaluation(activity, forecastHours);
-  } catch (error) {
-    console.warn('OpenRouter evaluation failed, using fallback:', error);
+  } catch {
     return generateFallbackActivityEvaluation(activity, forecastHours);
   }
 }

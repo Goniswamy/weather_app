@@ -339,7 +339,7 @@ export const Forecast: React.FC<ForecastProps> = ({
       {activeTab === 'forecast' && (
         <>
           {/* AI Daily Overview */}
-          <div className="p-5 bg-gradient-to-r from-blue-50/90 via-indigo-50/80 to-purple-50/90 backdrop-blur-md rounded-2xl shadow-md border border-white/40 space-y-3">
+          <div className="p-5 sm:p-6 bg-gradient-to-r from-blue-50/90 via-indigo-50/80 to-purple-50/90 backdrop-blur-md rounded-2xl border border-white/40 shadow-sm hover:shadow-md transition-all duration-200 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-xl shadow-sm">
@@ -399,7 +399,7 @@ export const Forecast: React.FC<ForecastProps> = ({
           </div>
 
           {/* Hourly Outlook */}
-          <div className="p-5 bg-white/90 backdrop-blur-md rounded-2xl shadow-md border border-white/20">
+          <div className="p-5 sm:p-6 bg-white/80 backdrop-blur-md rounded-2xl border border-white/40 shadow-sm hover:shadow-md transition-all duration-200">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
@@ -483,7 +483,7 @@ export const Forecast: React.FC<ForecastProps> = ({
           </div>
 
           {/* 5-Day Forecast */}
-          <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-md border border-white/20 p-5">
+          <div className="p-5 sm:p-6 bg-white/80 backdrop-blur-md rounded-2xl border border-white/40 shadow-sm hover:shadow-md transition-all duration-200">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
@@ -544,7 +544,7 @@ export const Forecast: React.FC<ForecastProps> = ({
                 ))}
               </div>
             ) : (
-              <div className="grid grid-cols-5 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
                 {daily.map((item) => (
                   <div
                     key={item.day}
@@ -575,7 +575,7 @@ export const Forecast: React.FC<ForecastProps> = ({
           Shows: AQI · UV · Wind Compass · Sunrise/Sunset · Quick Metrics
       ─────────────────────────────────────────────────── */}
       {activeTab === 'metrics' && (
-        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-md border border-white/20 p-5 space-y-5">
+        <div className="p-5 sm:p-6 bg-white/80 backdrop-blur-md rounded-2xl border border-white/40 shadow-sm hover:shadow-md transition-all duration-200 space-y-5">
           <div className="flex items-center gap-2.5">
             <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
               <Gauge className="w-4 h-4" />
@@ -587,9 +587,9 @@ export const Forecast: React.FC<ForecastProps> = ({
           </div>
 
           {/* 4 Rich Visual Widgets in responsive grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Widget 1: AQI */}
-            <div className="p-4 rounded-xl bg-white/70 hover:bg-white border border-white/60 shadow-sm hover:shadow transition-all flex flex-col gap-2">
+            <div className="p-4 rounded-xl bg-white/80 hover:bg-white border border-white/40 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col gap-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-700">
                   <Activity className="w-4 h-4 text-emerald-600" />
@@ -622,7 +622,7 @@ export const Forecast: React.FC<ForecastProps> = ({
             </div>
 
             {/* Widget 2: UV Protection */}
-            <div className="p-4 rounded-xl bg-white/70 hover:bg-white border border-white/60 shadow-sm hover:shadow transition-all flex flex-col gap-2">
+            <div className="p-4 rounded-xl bg-white/80 hover:bg-white border border-white/40 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col gap-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-700">
                   <Sun className={`w-4 h-4 ${uvConfig.iconColor}`} />
@@ -650,7 +650,7 @@ export const Forecast: React.FC<ForecastProps> = ({
             </div>
 
             {/* Widget 3: Wind Compass */}
-            <div className="p-4 rounded-xl bg-white/70 hover:bg-white border border-white/60 shadow-sm hover:shadow transition-all flex flex-col gap-2">
+            <div className="p-4 rounded-xl bg-white/80 hover:bg-white border border-white/40 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col gap-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-700">
                   <Wind className="w-4 h-4 text-teal-600" />
@@ -685,7 +685,7 @@ export const Forecast: React.FC<ForecastProps> = ({
             </div>
 
             {/* Widget 4: Sunrise / Sunset */}
-            <div className="p-4 rounded-xl bg-white/70 hover:bg-white border border-white/60 shadow-sm hover:shadow transition-all flex flex-col gap-2">
+            <div className="p-4 rounded-xl bg-white/80 hover:bg-white border border-white/40 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col gap-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-700">
                   <Sunrise className="w-4 h-4 text-amber-500" />
@@ -726,8 +726,8 @@ export const Forecast: React.FC<ForecastProps> = ({
           </div>
 
           {/* Quick Metrics strip — Feels Like, Humidity, Visibility, Pressure */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="p-3 bg-white/70 hover:bg-white rounded-xl border border-white/60 shadow-sm transition-all">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="p-3 bg-white/80 hover:bg-white rounded-xl border border-white/40 shadow-sm hover:shadow-md transition-all duration-200">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Feels Like</span>
                 <Thermometer className="w-3.5 h-3.5 text-orange-400" />
@@ -735,7 +735,7 @@ export const Forecast: React.FC<ForecastProps> = ({
               <p className="text-lg font-bold text-gray-900">{metrics.feelsLike}°C</p>
               <p className="text-[10px] text-gray-500">Similar to actual</p>
             </div>
-            <div className="p-3 bg-white/70 hover:bg-white rounded-xl border border-white/60 shadow-sm transition-all">
+            <div className="p-3 bg-white/80 hover:bg-white rounded-xl border border-white/40 shadow-sm hover:shadow-md transition-all duration-200">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Humidity</span>
                 <Droplets className="w-3.5 h-3.5 text-blue-400" />
@@ -743,7 +743,7 @@ export const Forecast: React.FC<ForecastProps> = ({
               <p className="text-lg font-bold text-gray-900">{metrics.humidity}%</p>
               <p className="text-[10px] text-gray-500">Moderate moisture</p>
             </div>
-            <div className="p-3 bg-white/70 hover:bg-white rounded-xl border border-white/60 shadow-sm transition-all">
+            <div className="p-3 bg-white/80 hover:bg-white rounded-xl border border-white/40 shadow-sm hover:shadow-md transition-all duration-200">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Visibility</span>
                 <Eye className="w-3.5 h-3.5 text-indigo-400" />
@@ -751,7 +751,7 @@ export const Forecast: React.FC<ForecastProps> = ({
               <p className="text-lg font-bold text-gray-900">{metrics.visibility}</p>
               <p className="text-[10px] text-gray-500">Clear sight lines</p>
             </div>
-            <div className="p-3 bg-white/70 hover:bg-white rounded-xl border border-white/60 shadow-sm transition-all">
+            <div className="p-3 bg-white/80 hover:bg-white rounded-xl border border-white/40 shadow-sm hover:shadow-md transition-all duration-200">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Pressure</span>
                 <Gauge className="w-3.5 h-3.5 text-sky-500" />

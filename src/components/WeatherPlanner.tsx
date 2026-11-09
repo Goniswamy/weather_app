@@ -7,12 +7,7 @@ import {
   Glasses,
   Backpack,
   Clock,
-  Calendar,
   CheckCircle2,
-  AlertTriangle,
-  Flame,
-  Droplets,
-  Wind,
   X,
   Footprints,
   Bot,
@@ -469,7 +464,7 @@ export const WeatherPlanner: React.FC<WeatherPlannerProps> = ({
   }, [currentTemp, rainChance, uvIndex]);
 
   return (
-    <section className="w-full max-w-7xl mx-auto p-5 sm:p-6 bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-white/20 space-y-6">
+    <section className="w-full max-w-7xl mx-auto p-5 sm:p-6 bg-white/80 backdrop-blur-md rounded-2xl border border-white/40 shadow-sm hover:shadow-md transition-all duration-200 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
         <div className="flex items-center gap-3">
@@ -557,7 +552,7 @@ export const WeatherPlanner: React.FC<WeatherPlannerProps> = ({
         {/* Left Column: Optimal Recommended Slot + 3-Hour Suitability Grid (7 Cols on desktop) */}
         <div className="lg:col-span-7 space-y-5">
           {/* Optimal Recommended Time Slot Card */}
-          <div className="p-4 sm:p-5 bg-gradient-to-br from-blue-600 via-indigo-600 to-blue-700 text-white rounded-2xl shadow-md relative overflow-hidden">
+          <div className="p-4 sm:p-5 bg-gradient-to-br from-blue-600 via-indigo-600 to-blue-700 text-white rounded-2xl border border-blue-500/30 shadow-sm hover:shadow-md transition-all duration-200 relative overflow-hidden">
             <div className="flex justify-between items-start mb-2">
               <div className="flex items-center gap-2">
                 <span className="text-xl">{selectedActivity.icon}</span>
@@ -599,7 +594,7 @@ export const WeatherPlanner: React.FC<WeatherPlannerProps> = ({
           </div>
 
           {/* AI Custom Activity Evaluator Card */}
-          <div className="p-4 sm:p-5 bg-gradient-to-br from-indigo-50/90 via-purple-50/70 to-blue-50/80 rounded-2xl border border-indigo-100/90 shadow-md space-y-3.5">
+          <div className="p-4 sm:p-5 bg-gradient-to-br from-indigo-50/90 via-purple-50/70 to-blue-50/80 rounded-2xl border border-indigo-100/90 shadow-sm hover:shadow-md transition-all duration-200 space-y-3.5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-xl shadow-xs">
@@ -701,14 +696,14 @@ export const WeatherPlanner: React.FC<WeatherPlannerProps> = ({
               </span>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {threeHourWindows.map((win) => (
                 <div
                   key={win.id}
-                  className={`p-3.5 rounded-xl border transition-all flex flex-col justify-between relative ${
+                  className={`p-3.5 rounded-xl border transition-all duration-200 flex flex-col justify-between relative ${
                     win.isBest
                       ? 'bg-blue-50/90 border-blue-400 shadow-md ring-2 ring-blue-300'
-                      : 'bg-white/70 hover:bg-white border-white/60 hover:border-blue-200 shadow-2xs'
+                      : 'bg-white/80 hover:bg-white border-white/40 hover:border-blue-200 shadow-sm hover:shadow-md'
                   }`}
                 >
                   {win.isBest && (
@@ -775,7 +770,7 @@ export const WeatherPlanner: React.FC<WeatherPlannerProps> = ({
               {outfitRecommendations.map((item, idx) => (
                 <div
                   key={`${item.category}-${idx}`}
-                  className="p-3 rounded-xl bg-white/70 hover:bg-white border border-white/60 hover:border-indigo-200 shadow-2xs hover:shadow-xs transition-all flex items-start gap-3 group"
+                  className="p-3 rounded-xl bg-white/80 hover:bg-white border border-white/40 hover:border-indigo-200 shadow-sm hover:shadow-md transition-all duration-200 flex items-start gap-3 group"
                 >
                   <div className="p-2 rounded-lg bg-gray-50 border border-gray-100 shrink-0 group-hover:scale-105 transition-transform">
                     {item.icon}

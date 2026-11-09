@@ -42,10 +42,10 @@ const Index: React.FC = () => {
       <div className={`transition-opacity duration-500 ${showWelcome ? 'opacity-0' : 'opacity-100 fade-in'}`}>
         <WeatherApp />
 
-        <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5 -mt-8 relative z-10">
+        <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 mt-6 sm:mt-8 relative z-10">
           {/* Pill Tab Bar */}
-          <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-white/30 shadow-lg p-1.5">
-            <div className="grid grid-cols-3 gap-1.5">
+          <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-white/40 shadow-sm hover:shadow-md transition-all duration-200 p-1.5 sm:p-2">
+            <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
               {TABS.map((tab) => {
                 const isActive = activeTab === tab.id;
                 return (
@@ -53,7 +53,7 @@ const Index: React.FC = () => {
                     key={tab.id}
                     type="button"
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center justify-center sm:justify-start gap-2 px-3 sm:px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                    className={`flex items-center justify-center sm:justify-start gap-2 px-3 sm:px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer ${
                       isActive
                         ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
                         : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100/80'
