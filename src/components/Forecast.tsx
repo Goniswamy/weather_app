@@ -12,6 +12,11 @@ import {
   Gauge,
   LayoutGrid,
   List,
+  Navigation,
+  Sunrise,
+  Sunset,
+  Activity,
+  ShieldAlert,
 } from 'lucide-react';
 
 export interface HourlyForecast {
@@ -38,6 +43,30 @@ export interface DailyForecast {
   windSpeed?: string;
 }
 
+export interface AirQuality {
+  aqi: number;
+  status: 'Good' | 'Moderate' | 'Unhealthy for Sensitive Groups' | 'Unhealthy' | 'Very Unhealthy' | 'Hazardous';
+  pm25: number; // µg/m³
+  pm10: number; // µg/m³
+  o3?: number; // ppb
+  no2?: number; // ppb
+}
+
+export interface WindDetails {
+  speed: string; // e.g. "14 km/h"
+  direction: string; // e.g. "NW"
+  degrees: number; // 0 - 360
+  gusts: string; // e.g. "24 km/h"
+}
+
+export interface SunCycle {
+  sunrise: string;
+  sunset: string;
+  dawn?: string;
+  dusk?: string;
+  daylightDuration?: string;
+}
+
 export interface AdditionalMetrics {
   humidity: number;
   windSpeed: string;
@@ -45,6 +74,9 @@ export interface AdditionalMetrics {
   feelsLike: number;
   visibility: string;
   pressure: string;
+  airQuality?: AirQuality;
+  windDetails?: WindDetails;
+  sunCycle?: SunCycle;
   sunrise?: string;
   sunset?: string;
 }
@@ -90,6 +122,30 @@ const defaultDaily: DailyForecast[] = [
   { day: 'Fri', date: 'Nov 13', tempMax: 29, tempMin: 19, condition: 'Sunny & Clear', icon: '☀️', rainChance: 10, humidity: 45, windSpeed: '10 km/h' },
 ];
 
+const defaultAirQuality: AirQuality = {
+  aqi: 42,
+  status: 'Good',
+  pm25: 9.8,
+  pm10: 18.4,
+  o3: 28,
+  no2: 14,
+};
+
+const defaultWindDetails: WindDetails = {
+  speed: '14 km/h',
+  direction: 'NW',
+  degrees: 315,
+  gusts: '24 km/h',
+};
+
+const defaultSunCycle: SunCycle = {
+  sunrise: '06:14 AM',
+  sunset: '05:48 PM',
+  dawn: '05:49 AM',
+  dusk: '06:13 PM',
+  daylightDuration: '11h 34m',
+};
+
 const defaultMetrics: AdditionalMetrics = {
   humidity: 62,
   windSpeed: '14 km/h NW',
@@ -97,6 +153,89 @@ const defaultMetrics: AdditionalMetrics = {
   feelsLike: 31,
   visibility: '10 km',
   pressure: '1013 hPa',
+  airQuality: defaultAirQuality,
+  windDetails: defaultWindDetails,
+  sunCycle: defaultSunCycle,
+  sunrise: '06:14 AM',
+  sunset: '05:48 PM',
+};
+
+const getAqiConfig = (aqi: number) => {
+  if (aqi <= 50) {
+    return {
+      status: 'Good',
+      color: 'text-emerald-700 bg-emerald-50 border-emerald-200',
+      barColor: 'bg-emerald-500',
+      description: 'Air quality is satisfactory with minimal health risk.',
+      percentage: Math.min((aqi / 300) * 100, 100),
+    };
+  }
+  if (aqi <= 100) {
+    return {
+      status: 'Moderate',
+      color: 'text-amber-700 bg-amber-50 border-amber-200',
+      barColor: 'bg-amber-500',
+      description: 'Air quality is acceptable; unusually sensitive people should consider limiting outdoor exertion.',
+      percentage: Math.min((aqi / 300) * 100, 100),
+    };
+  }
+  if (aqi <= 150) {
+    return {
+      status: 'Unhealthy for Sensitive Groups',
+      color: 'text-orange-700 bg-orange-50 border-orange-200',
+      barColor: 'bg-orange-500',
+      description: 'Members of sensitive groups may experience health effects.',
+      percentage: Math.min((aqi / 300) * 100, 100),
+    };
+  }
+  return {
+    status: 'Unhealthy',
+    color: 'text-rose-700 bg-rose-50 border-rose-200',
+    barColor: 'bg-rose-500',
+    description: 'Everyone may begin to experience health effects; limit prolonged outdoor exposure.',
+    percentage: Math.min((aqi / 300) * 100, 100),
+  };
+};
+
+const getUvAdvice = (uv: number) => {
+  if (uv <= 2) {
+    return {
+      level: 'Low',
+      badgeColor: 'text-emerald-700 bg-emerald-50 border-emerald-200',
+      advice: 'Low exposure risk. Enjoy outdoors safely without extra sun protection.',
+      iconColor: 'text-emerald-500',
+    };
+  }
+  if (uv <= 5) {
+    return {
+      level: 'Moderate',
+      badgeColor: 'text-amber-700 bg-amber-50 border-amber-200',
+      advice: 'Moderate exposure risk. Wear sunglasses, a sun hat, and apply SPF 15+ sunscreen.',
+      iconColor: 'text-amber-500',
+    };
+  }
+  if (uv <= 7) {
+    return {
+      level: 'High',
+      badgeColor: 'text-orange-700 bg-orange-50 border-orange-200',
+      advice: 'UV 6: SPF 30+ recommended, wear UV sunglasses & seek shade during midday hours.',
+      iconColor: 'text-orange-500',
+    };
+  }
+  if (uv <= 10) {
+    return {
+      level: 'Very High',
+      badgeColor: 'text-red-700 bg-red-50 border-red-200',
+      advice: 'Very high risk! Extra protection required. Minimize direct sun exposure between 10 AM and 4 PM.',
+      iconColor: 'text-red-500',
+    };
+  }
+  return {
+    level: 'Extreme',
+    badgeColor: 'text-purple-700 bg-purple-50 border-purple-200',
+    advice: 'Extreme risk! Take all precautions: SPF 50+, protective clothing, sunglasses, and avoid midday sun.',
+    iconColor: 'text-purple-500',
+  };
 };
 
 export const Forecast: React.FC<ForecastProps> = ({
@@ -107,6 +246,26 @@ export const Forecast: React.FC<ForecastProps> = ({
   const sliderRef = useRef<HTMLDivElement>(null);
   const [selectedHourIndex, setSelectedHourIndex] = useState<number | null>(null);
   const [dailyViewMode, setDailyViewMode] = useState<'list' | 'grid'>('list');
+
+  const aqiData = metrics.airQuality || defaultAirQuality;
+  const aqiConfig = getAqiConfig(aqiData.aqi);
+
+  const uvConfig = getUvAdvice(metrics.uvIndex);
+
+  const windData = metrics.windDetails || {
+    speed: metrics.windSpeed || defaultWindDetails.speed,
+    direction: defaultWindDetails.direction,
+    degrees: defaultWindDetails.degrees,
+    gusts: defaultWindDetails.gusts,
+  };
+
+  const sunData = metrics.sunCycle || {
+    sunrise: metrics.sunrise || defaultSunCycle.sunrise,
+    sunset: metrics.sunset || defaultSunCycle.sunset,
+    dawn: defaultSunCycle.dawn,
+    dusk: defaultSunCycle.dusk,
+    daylightDuration: defaultSunCycle.daylightDuration,
+  };
 
   const scrollSlider = (direction: 'left' | 'right') => {
     if (sliderRef.current) {
@@ -236,10 +395,10 @@ export const Forecast: React.FC<ForecastProps> = ({
         </div>
       </div>
 
-      {/* Responsive Grid Layout: 5-Day Forecast & Additional Weather Details */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      {/* 2-Column Responsive Dashboard Grid: 5-Day Forecast & Rich Additional Weather Details */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* 5-Day Weather Forecast Card */}
-        <div className="lg:col-span-7 bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-white/20 p-5 sm:p-6 flex flex-col justify-between">
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-white/20 p-5 sm:p-6 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2.5">
@@ -353,8 +512,8 @@ export const Forecast: React.FC<ForecastProps> = ({
           </div>
         </div>
 
-        {/* Additional Weather Details Grid Card */}
-        <div className="lg:col-span-5 bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-white/20 p-5 sm:p-6 flex flex-col justify-between">
+        {/* Feature 2: High-Impact Visual Additional Weather Details Grid Card */}
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-white/20 p-5 sm:p-6 space-y-4 flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-2.5 mb-4">
               <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
@@ -364,78 +523,211 @@ export const Forecast: React.FC<ForecastProps> = ({
                 <h3 className="text-base sm:text-lg font-bold text-gray-900">
                   Additional Weather Details
                 </h3>
-                <p className="text-xs text-gray-500">Atmospheric indicators & comfort levels</p>
+                <p className="text-xs text-gray-500">Live environmental widgets, AQI, UV advice & wind</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-3">
-              <div className="p-3 bg-white/70 hover:bg-white rounded-xl border border-white/60 shadow-xs transition-all">
-                <div className="flex items-center justify-between text-gray-500 mb-1">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+            {/* 4 Rich Visual Widgets Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              {/* Widget 1: Air Quality Index (AQI) Gauge */}
+              <div className="p-3.5 rounded-xl bg-white/70 hover:bg-white border border-white/60 shadow-xs hover:shadow-sm transition-all flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-700">
+                    <Activity className="w-4 h-4 text-emerald-600" />
+                    <span>Air Quality Index</span>
+                  </div>
+                  <span
+                    className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${aqiConfig.color}`}
+                  >
+                    {aqiConfig.status}
+                  </span>
+                </div>
+
+                <div className="my-1.5 flex items-baseline gap-2">
+                  <span className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
+                    {aqiData.aqi}
+                  </span>
+                  <span className="text-xs font-medium text-gray-400">AQI Score</span>
+                </div>
+
+                {/* AQI Graphical Meter Bar */}
+                <div className="w-full space-y-1 my-1">
+                  <div className="w-full h-2 rounded-full bg-gradient-to-r from-emerald-400 via-amber-400 via-orange-400 to-rose-500 relative overflow-hidden">
+                    <div
+                      className="absolute top-0 bottom-0 right-0 bg-gray-200/60"
+                      style={{ width: `${Math.max(0, 100 - aqiConfig.percentage)}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-[10px] text-gray-400 font-medium">
+                    <span>0 (Good)</span>
+                    <span>150+ (Unhealthy)</span>
+                  </div>
+                </div>
+
+                {/* PM2.5 / PM10 Breakdown */}
+                <div className="mt-2 pt-2 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-600">
+                  <span className="font-medium">
+                    PM2.5: <strong className="text-gray-900">{aqiData.pm25}</strong> µg/m³
+                  </span>
+                  <span className="font-medium">
+                    PM10: <strong className="text-gray-900">{aqiData.pm10}</strong> µg/m³
+                  </span>
+                </div>
+              </div>
+
+              {/* Widget 2: UV Protection Advice Badge */}
+              <div className="p-3.5 rounded-xl bg-white/70 hover:bg-white border border-white/60 shadow-xs hover:shadow-sm transition-all flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-700">
+                    <Sun className={`w-4 h-4 ${uvConfig.iconColor}`} />
+                    <span>UV Protection</span>
+                  </div>
+                  <span
+                    className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${uvConfig.badgeColor}`}
+                  >
+                    UV {metrics.uvIndex} • {uvConfig.level}
+                  </span>
+                </div>
+
+                {/* Advice Card Callout */}
+                <div className="my-1.5 p-2 rounded-lg bg-amber-50/70 border border-amber-200/60 flex items-start gap-2">
+                  <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <p className="text-[11px] text-amber-900 font-medium leading-relaxed">
+                    {uvConfig.advice}
+                  </p>
+                </div>
+
+                {/* UV Meter indicator */}
+                <div className="mt-2 pt-2 border-t border-gray-100 flex items-center justify-between text-[10px] text-gray-500 font-medium">
+                  <span>Peak: 10 AM – 4 PM</span>
+                  <span className="text-amber-700 font-semibold">Sunscreen Recommended</span>
+                </div>
+              </div>
+
+              {/* Widget 3: Wind Compass & Speed Visualizer */}
+              <div className="p-3.5 rounded-xl bg-white/70 hover:bg-white border border-white/60 shadow-xs hover:shadow-sm transition-all flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-700">
+                    <Wind className="w-4 h-4 text-teal-600" />
+                    <span>Wind & Compass</span>
+                  </div>
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200">
+                    {windData.direction} ({windData.degrees}°)
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3 my-1">
+                  {/* Graphical Compass Rose */}
+                  <div className="relative w-14 h-14 rounded-full border-2 border-teal-100 bg-teal-50/50 flex items-center justify-center shrink-0 shadow-inner">
+                    <span className="absolute top-0.5 text-[9px] font-bold text-gray-400">N</span>
+                    <span className="absolute bottom-0.5 text-[9px] font-bold text-gray-400">S</span>
+                    <span className="absolute left-1 text-[9px] font-bold text-gray-400">W</span>
+                    <span className="absolute right-1 text-[9px] font-bold text-gray-400">E</span>
+                    <Navigation
+                      className="w-6 h-6 text-teal-600 transition-transform duration-500 drop-shadow-xs"
+                      style={{ transform: `rotate(${windData.degrees}deg)` }}
+                    />
+                  </div>
+
+                  <div className="flex flex-col justify-center">
+                    <span className="text-xl font-bold text-gray-900 tracking-tight">
+                      {windData.speed}
+                    </span>
+                    <span className="text-xs font-semibold text-teal-700">
+                      Gusts up to {windData.gusts}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-2 pt-2 border-t border-gray-100 flex items-center justify-between text-[10px] text-gray-500 font-medium">
+                  <span>Direction: {windData.direction}</span>
+                  <span>Breeze: Moderate</span>
+                </div>
+              </div>
+
+              {/* Widget 4: Sunrise & Sunset Twilight Timeline */}
+              <div className="p-3.5 rounded-xl bg-white/70 hover:bg-white border border-white/60 shadow-xs hover:shadow-sm transition-all flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-700">
+                    <Sunrise className="w-4 h-4 text-amber-500" />
+                    <span>Sun & Twilight Cycle</span>
+                  </div>
+                  {sunData.daylightDuration && (
+                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                      ☀️ {sunData.daylightDuration}
+                    </span>
+                  )}
+                </div>
+
+                {/* Twilight Visual Timeline Bar */}
+                <div className="my-1.5 space-y-1">
+                  <div className="w-full h-2 rounded-full bg-gradient-to-r from-amber-400 via-sky-300 to-indigo-500 shadow-inner" />
+                  <div className="flex justify-between items-center text-[10px] text-gray-400">
+                    <span>Dawn {sunData.dawn}</span>
+                    <span>Dusk {sunData.dusk}</span>
+                  </div>
+                </div>
+
+                {/* Sunrise / Sunset Times */}
+                <div className="mt-2 pt-2 border-t border-gray-100 grid grid-cols-2 gap-2 text-center">
+                  <div className="flex items-center justify-center gap-1.5 bg-amber-50/60 py-1 px-2 rounded-lg">
+                    <Sunrise className="w-3.5 h-3.5 text-amber-600" />
+                    <div className="text-left">
+                      <span className="text-[9px] text-gray-400 uppercase block font-medium">Sunrise</span>
+                      <strong className="text-xs text-gray-900">{sunData.sunrise}</strong>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-center gap-1.5 bg-indigo-50/60 py-1 px-2 rounded-lg">
+                    <Sunset className="w-3.5 h-3.5 text-indigo-600" />
+                    <div className="text-left">
+                      <span className="text-[9px] text-gray-400 uppercase block font-medium">Sunset</span>
+                      <strong className="text-xs text-gray-900">{sunData.sunset}</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Metrics 4-Column Row (Feels Like, Humidity, Visibility, Pressure) */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-3.5">
+              <div className="p-2.5 bg-white/70 hover:bg-white rounded-xl border border-white/60 shadow-xs transition-all">
+                <div className="flex items-center justify-between text-gray-500 mb-0.5">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
                     Feels Like
                   </span>
-                  <Thermometer className="w-3.5 h-3.5 text-orange-400" />
+                  <Thermometer className="w-3 h-3 text-orange-400" />
                 </div>
-                <p className="text-lg font-bold text-gray-900">{metrics.feelsLike}°C</p>
-                <p className="text-[10px] text-gray-500 mt-0.5">Similar to actual</p>
+                <p className="text-base font-bold text-gray-900">{metrics.feelsLike}°C</p>
               </div>
 
-              <div className="p-3 bg-white/70 hover:bg-white rounded-xl border border-white/60 shadow-xs transition-all">
-                <div className="flex items-center justify-between text-gray-500 mb-1">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+              <div className="p-2.5 bg-white/70 hover:bg-white rounded-xl border border-white/60 shadow-xs transition-all">
+                <div className="flex items-center justify-between text-gray-500 mb-0.5">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
                     Humidity
                   </span>
-                  <Droplets className="w-3.5 h-3.5 text-blue-400" />
+                  <Droplets className="w-3 h-3 text-blue-400" />
                 </div>
-                <p className="text-lg font-bold text-gray-900">{metrics.humidity}%</p>
-                <p className="text-[10px] text-gray-500 mt-0.5">Moderate moisture</p>
+                <p className="text-base font-bold text-gray-900">{metrics.humidity}%</p>
               </div>
 
-              <div className="p-3 bg-white/70 hover:bg-white rounded-xl border border-white/60 shadow-xs transition-all">
-                <div className="flex items-center justify-between text-gray-500 mb-1">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
-                    Wind Speed
-                  </span>
-                  <Wind className="w-3.5 h-3.5 text-teal-500" />
-                </div>
-                <p className="text-sm font-bold text-gray-900 mt-1">{metrics.windSpeed}</p>
-                <p className="text-[10px] text-gray-500 mt-0.5">Gentle breeze</p>
-              </div>
-
-              <div className="p-3 bg-white/70 hover:bg-white rounded-xl border border-white/60 shadow-xs transition-all">
-                <div className="flex items-center justify-between text-gray-500 mb-1">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
-                    UV Index
-                  </span>
-                  <Sun className="w-3.5 h-3.5 text-amber-500" />
-                </div>
-                <p className="text-lg font-bold text-gray-900">
-                  {metrics.uvIndex}{' '}
-                  <span className="text-xs font-medium text-amber-600">(Moderate)</span>
-                </p>
-                <p className="text-[10px] text-gray-500 mt-0.5">Sun protection advised</p>
-              </div>
-
-              <div className="p-3 bg-white/70 hover:bg-white rounded-xl border border-white/60 shadow-xs transition-all">
-                <div className="flex items-center justify-between text-gray-500 mb-1">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+              <div className="p-2.5 bg-white/70 hover:bg-white rounded-xl border border-white/60 shadow-xs transition-all">
+                <div className="flex items-center justify-between text-gray-500 mb-0.5">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
                     Visibility
                   </span>
-                  <Eye className="w-3.5 h-3.5 text-indigo-400" />
+                  <Eye className="w-3 h-3 text-indigo-400" />
                 </div>
-                <p className="text-lg font-bold text-gray-900">{metrics.visibility}</p>
-                <p className="text-[10px] text-gray-500 mt-0.5">Clear view</p>
+                <p className="text-base font-bold text-gray-900">{metrics.visibility}</p>
               </div>
 
-              <div className="p-3 bg-white/70 hover:bg-white rounded-xl border border-white/60 shadow-xs transition-all">
-                <div className="flex items-center justify-between text-gray-500 mb-1">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+              <div className="p-2.5 bg-white/70 hover:bg-white rounded-xl border border-white/60 shadow-xs transition-all">
+                <div className="flex items-center justify-between text-gray-500 mb-0.5">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
                     Pressure
                   </span>
-                  <Gauge className="w-3.5 h-3.5 text-sky-500" />
+                  <Gauge className="w-3 h-3 text-sky-500" />
                 </div>
-                <p className="text-sm font-bold text-gray-900 mt-1">{metrics.pressure}</p>
-                <p className="text-[10px] text-gray-500 mt-0.5">Normal barometric</p>
+                <p className="text-sm font-bold text-gray-900 mt-0.5">{metrics.pressure}</p>
               </div>
             </div>
           </div>
