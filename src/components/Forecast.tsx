@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Clock,
   Calendar,
@@ -17,7 +17,14 @@ import {
   Sunset,
   Activity,
   ShieldAlert,
+  Sparkles,
+  RefreshCw,
+  Loader2,
 } from 'lucide-react';
+import {
+  fetchWeatherNarrative,
+  generateFallbackNarrative,
+} from '@/services/openRouterService';
 
 export interface HourlyForecast {
   time: string;
@@ -279,8 +286,117 @@ export const Forecast: React.FC<ForecastProps> = ({
 
   const selectedHour = selectedHourIndex !== null ? hourly[selectedHourIndex] : null;
 
+  const [narrative, setNarrative] = useState<string>('');
+  const [isLoadingNarrative, setIsLoadingNarrative] = useState<boolean>(true);
+
+  const loadNarrative = useCallback(async () => {
+    setIsLoadingNarrative(true);
+    try {
+      const today = daily[0] || defaultDaily[0];
+      const result = await fetchWeatherNarrative({
+        tempMax: today.tempMax,
+        tempMin: today.tempMin,
+        condition: today.condition,
+        rainChance: today.rainChance,
+        humidity: metrics.humidity,
+        windSpeed: metrics.windSpeed,
+        uvIndex: metrics.uvIndex,
+        feelsLike: metrics.feelsLike,
+      });
+      setNarrative(result);
+    } catch {
+      const today = daily[0] || defaultDaily[0];
+      setNarrative(
+        generateFallbackNarrative({
+          tempMax: today.tempMax,
+          tempMin: today.tempMin,
+          condition: today.condition,
+          rainChance: today.rainChance,
+          humidity: metrics.humidity,
+          windSpeed: metrics.windSpeed,
+          uvIndex: metrics.uvIndex,
+          feelsLike: metrics.feelsLike,
+        })
+      );
+    } finally {
+      setIsLoadingNarrative(false);
+    }
+  }, [daily, metrics]);
+
+  useEffect(() => {
+    loadNarrative();
+  }, [loadNarrative]);
+
   return (
     <section className="w-full max-w-7xl mx-auto space-y-6">
+      {/* AI Smart Weather Narrative Card */}
+      <div className="p-5 sm:p-6 bg-gradient-to-r from-blue-50/90 via-indigo-50/80 to-purple-50/90 backdrop-blur-md rounded-2xl shadow-lg border border-white/40 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-xl shadow-md">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base sm:text-lg font-bold text-gray-900">
+                  AI Smart Weather Narrative
+                </h3>
+                <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200">
+                  OpenRouter AI
+                </span>
+              </div>
+              <p className="text-xs text-gray-500">
+                Real-time conversational meteorological executive summary
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={loadNarrative}
+            disabled={isLoadingNarrative}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/90 hover:bg-white text-indigo-700 hover:text-indigo-900 border border-indigo-200/80 shadow-2xs hover:shadow-xs transition-all active:scale-95 disabled:opacity-60 cursor-pointer"
+            title="Regenerate AI Narrative"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoadingNarrative ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Refresh AI</span>
+          </button>
+        </div>
+
+        {/* Narrative Content / Skeleton Loading */}
+        {isLoadingNarrative ? (
+          <div className="py-2 space-y-2.5 animate-pulse">
+            <div className="flex items-center gap-2 text-xs font-medium text-indigo-600">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Synthesizing atmospheric conditions via OpenRouter...</span>
+            </div>
+            <div className="h-4 bg-indigo-200/60 rounded-full w-full" />
+            <div className="h-4 bg-indigo-200/40 rounded-full w-4/5" />
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-sm sm:text-base text-gray-800 leading-relaxed font-medium">
+              "{narrative}"
+            </p>
+
+            <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-indigo-100/60 text-xs font-medium text-gray-600">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/80 border border-indigo-100 text-gray-700">
+                <span>🌡️</span> High: <strong>{daily[0]?.tempMax || 31}°C</strong>
+              </span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/80 border border-indigo-100 text-gray-700">
+                <span>💧</span> Rain Risk: <strong>{daily[0]?.rainChance || 45}%</strong>
+              </span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/80 border border-indigo-100 text-gray-700">
+                <span>☀️</span> UV Index: <strong>{metrics.uvIndex} ({uvConfig.level})</strong>
+              </span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/80 border border-indigo-100 text-gray-700">
+                <span>💨</span> Wind: <strong>{windData.speed} {windData.direction}</strong>
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* 24-Hour Interactive Horizontal Scrollable Slider */}
       <div className="p-5 sm:p-6 bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-white/20">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">

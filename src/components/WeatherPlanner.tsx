@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   Sparkles,
   Plus,
@@ -15,7 +15,15 @@ import {
   Wind,
   X,
   Footprints,
+  Bot,
+  Loader2,
+  RefreshCw,
+  ShieldCheck,
 } from 'lucide-react';
+import {
+  evaluateActivityWithAI,
+  ActivityEvaluationResult,
+} from '@/services/openRouterService';
 
 export interface PlannerForecastHour {
   time: string;
@@ -176,6 +184,34 @@ export const WeatherPlanner: React.FC<WeatherPlannerProps> = ({
   const [activities, setActivities] = useState<ActivityRule[]>(presetActivities);
   const [selectedActivity, setSelectedActivity] = useState<ActivityRule>(presetActivities[0]);
   const [customInput, setCustomInput] = useState('');
+
+  const [aiEvaluation, setAiEvaluation] = useState<ActivityEvaluationResult | null>(null);
+  const [isLoadingAi, setIsLoadingAi] = useState<boolean>(false);
+
+  const runAiEvaluation = useCallback(async (activityName: string) => {
+    setIsLoadingAi(true);
+    try {
+      const result = await evaluateActivityWithAI(
+        activityName,
+        forecastData.map((h) => ({
+          time: h.time,
+          temp: h.temp,
+          pop: h.pop,
+          condition: h.condition,
+        }))
+      );
+      setAiEvaluation(result);
+    } catch (err) {
+      console.warn('AI activity evaluation error:', err);
+    } finally {
+      setIsLoadingAi(false);
+    }
+  }, [forecastData]);
+
+  // Run AI evaluation on activity change
+  useEffect(() => {
+    runAiEvaluation(selectedActivity.name);
+  }, [selectedActivity.name, runAiEvaluation]);
 
   // Handle adding a custom activity
   const handleAddCustomActivity = (e?: React.FormEvent) => {
@@ -563,6 +599,100 @@ export const WeatherPlanner: React.FC<WeatherPlannerProps> = ({
                 <span>{selectedActivity.idealWeather}</span>
               </div>
             </div>
+          </div>
+
+          {/* AI Custom Activity Evaluator Card */}
+          <div className="p-4 sm:p-5 bg-gradient-to-br from-indigo-50/90 via-purple-50/70 to-blue-50/80 rounded-2xl border border-indigo-100/90 shadow-md space-y-3.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-xl shadow-xs">
+                  <Bot className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-xs sm:text-sm font-bold text-gray-900">
+                      AI Activity Evaluator
+                    </h3>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200">
+                      OpenRouter AI
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-gray-500">
+                    Deep multi-factor analysis for &quot;{selectedActivity.name}&quot;
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => runAiEvaluation(selectedActivity.name)}
+                disabled={isLoadingAi}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-white hover:bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs hover:shadow-xs transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                title="Re-run AI Activity Evaluation"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isLoadingAi ? 'animate-spin text-indigo-600' : ''}`} />
+                <span className="hidden sm:inline">AI Analyze</span>
+              </button>
+            </div>
+
+            {isLoadingAi ? (
+              <div className="py-3 space-y-2 animate-pulse">
+                <div className="flex items-center gap-2 text-xs font-medium text-indigo-600">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Evaluating meteorological vectors for &quot;{selectedActivity.name}&quot;...</span>
+                </div>
+                <div className="h-3.5 bg-indigo-200/50 rounded-full w-full" />
+                <div className="h-3.5 bg-indigo-200/30 rounded-full w-4/5" />
+              </div>
+            ) : aiEvaluation ? (
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2 bg-white/80 p-2.5 rounded-xl border border-indigo-100/80">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">{selectedActivity.icon}</span>
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-gray-400 block">
+                        Best AI Recommended Window
+                      </span>
+                      <strong className="text-xs sm:text-sm text-indigo-900 font-extrabold flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5 text-indigo-600" />
+                        {aiEvaluation.bestTimeSlot}
+                      </strong>
+                    </div>
+                  </div>
+                  <span
+                    className={`text-xs font-bold px-2.5 py-1 rounded-full border shadow-2xs ${
+                      aiEvaluation.suitabilityScore >= 80
+                        ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                        : aiEvaluation.suitabilityScore >= 65
+                        ? 'bg-blue-100 text-blue-800 border-blue-300'
+                        : 'bg-amber-100 text-amber-800 border-amber-300'
+                    }`}
+                  >
+                    {aiEvaluation.suitabilityScore}% • {aiEvaluation.rating}
+                  </span>
+                </div>
+
+                <p className="text-xs text-gray-700 leading-relaxed font-medium bg-white/50 p-2.5 rounded-xl border border-indigo-50">
+                  {aiEvaluation.reasoning}
+                </p>
+
+                {aiEvaluation.safetyTips && aiEvaluation.safetyTips.length > 0 && (
+                  <div className="space-y-1.5 pt-1">
+                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">
+                      Safety & Preparation Tips:
+                    </span>
+                    <ul className="space-y-1">
+                      {aiEvaluation.safetyTips.map((tip, idx) => (
+                        <li key={idx} className="flex items-start gap-1.5 text-xs text-gray-600 font-medium">
+                          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                          <span>{tip}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            ) : null}
           </div>
 
           {/* 3-Hour Suitability Score Breakdown */}
